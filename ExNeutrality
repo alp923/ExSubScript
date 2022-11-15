@@ -1,0 +1,38 @@
+#load in r
+module load r
+R
+#Load in PopGenome, rehh and vcfR packages. 
+library(PopGenome)
+library(rehh)
+library(vcfR)
+#Setting library tree 
+.libPaths("/share/ceph/wym219group/shared/libraries/R")
+#Set wd and check it is right 
+setwd(../)
+getwd()
+#tell computer where the AMYA1 gene data is located, in Candidate Loci 
+AMYA1gene <- "/share/ceph/wym219group/shared/data/1000Genomes/CandidateLoci/AMY1A-C_2A-B.HC3202_chr1.102554700-104758690.vcf.gz"
+#GENOME.class gives data and stat values in a multi locus scale (vector or matrix)
+#Connect GENOME.class with the AMYA1 data 
+GENOME.class <- readVCF(AMYA1gene, numcols=1000, tid="chr1", frompos=102554700, topos=104758690, approx=FALSE, out="", parallel=FALSE, gffpath=FALSE)
+GENOME.class
+#Get summary information from the alignments. 
+get.sum.data (GENOME.class)
+neutrality.stats(GENOME.class, new.populations = FALSE, new.outgroup = FALSE, 
++     subsites = FALSE, detail = FALSE, FAST = FALSE, do.R2 = FALSE)
+#Get the neutrality stats 
+GENOME.class  <- neutrality.stats(GENOME.class)
+#Get populations and neut stats for them. 
+get.neutrality(GENOME.class)
+#Get the neutrality stats for population 1, gives TajimaD, segregating sites, Fu.Li F D and S, Wu.H, Zeng.E, and Strobeck 
+get.neutrality(GENOME.class)[[1]]
+#This gives just the Tajima D
+GENOME.class@Tajima.D
+#Can also split each subsite-region separately by splitting the data. splitting.data transforms the class into another object of class GENOME.
+GENOME.class.split <- splitting.data(GENOME.class, subsites="coding")
+GENOME.class.split  <- neutrality.stats(GENOME.class.split)
+GENOME.class.split@Tajima.D
+ #analyze all non-synonymous SNPs in the coding region
+ GENOME.class.split  <- neutrality.stats(GENOME.class.split, subsites="nonsyn")
+ F_ST.stats(GENOME.class)
+ 
