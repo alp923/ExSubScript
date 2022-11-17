@@ -1,0 +1,36 @@
+#We are going to load the data files again for the hh object. 
+hh <- data2haplohh(hap_file="/share/ceph/wym219group/shared/data/1000Genomes/CandidateLoci/AMY1A-C_2A-B.HC3202_chr1.102554700-104758690.vcf.gz", polarize_vcf=FALSE, vcf_reader= "data.table")
+#The haplohh-object can be visualized by a simple plot showing ancestral alleles in blue and derived in red. 
+ plot(hh) 
+ #Now, I need to separate by the populations I want to test… 
+ population <- read.csv(“population_samples.tsv”, stringAsFactors=FALSE) 
+ view(population) 
+ #Calculate the EHH and iHH to search for genomes that might have recently undergone selective pressure 
+ res <- calc_ehh(hh, mrk=1, include_nhaplo = TRUE) 
+ res
+ # Plot the EHH values 
+ plot(res) 
+ #scan_hh() does not evaluate EHH for every allele of a focal marker, but chooses, besides the mandatory ancestral allele, the derived allele with the highest frequency. 
+ scan <- scan_hh(hh)
+ scan 
+ scan <- scan_hh(hh, polarized=FALSE)
+ #ihs evaluates the differences, calculating the log ratio between IHH_A and IHH_D, giving un-normalized values unihs. Groupign markers with the same frequency of the derived allele. 
+ #calculate the summary of the EHH values over a region (iHS)
+ ihs <- ihh2ihs(scan, freqbin = 1)
+ ihs
+ #plot the IHS using a log scale on the p-vals to condense. The standardized iHS values should follow a normal distribution with the sites under selection as outliers. A genome wide plot of the ihs values shows clearly that the central marker is rather an outlier.  
+ manhattanplot(ihs, threshold = c(-1.5, 1.5), cr = cr, ylim = c(-2.5, 2.5), pch = 20) 
+ #For REHH, we will calculate all stats up to ihs, then use calc_candidates to split the data.
+ cr <- calc_candidate_regions(ihs, threshold = 2, ignore_sign = TRUE, window_size = 1)
+ #Table to summarize all values. 
+ regionlen <- max(scan$POSITION) -min(scan$POSITION)
+ nowindows <- ceiling(regionlen/10000)
+ CHR <- c(rep(scan$CHR[1], nowindows))
+ for(i in c(1:nowindows))[{
+ START[i] <- min(scan$POSITION) +
+ 	10000 * (i-1)
+ END[i] <- min(max(scan$POSITION),
+ 	START[i] + 10000-1)
+ }
+ myregions <- data.frame(CHR,START,END)
+ myregions
